@@ -1,8 +1,8 @@
-name: "Setup Poetry"
+name: "Setup Poetry + cache ⚡"
 author: "@benjavicente"
 description: "Actions that setups poetry, with useful defaults"
 branding:
-  icon: "package"
+  icon: "zap"
   color: "blue"
 inputs:
   poetry-version:
