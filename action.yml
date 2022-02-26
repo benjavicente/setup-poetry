@@ -1,0 +1,26 @@
+name: "Setup Poetry"
+author: "@benjavicente"
+description: "Actions that setups poetry, with useful defaults"
+branding:
+  icon: "package"
+  color: "blue"
+inputs:
+  poetry-version:
+    description: "The version of poetry to install"
+    required: false
+    default: "1.1.11"
+  cache-installation:
+    description: "If the poetry installation should use cache"
+    required: false
+    default: "true"
+  cache-dependencies:
+    description: "If dependencies of poetry install should use cache"
+    required: false
+    default: "true"
+  install-dependencies:
+    description: "If poetry install should run"
+    required: false
+    default: "true"
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

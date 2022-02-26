@@ -1,0 +1,45 @@
+name: 'build-test'
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          cache: 'npm'
+          node-version-file: '.nvmrc'
+      - run: npm install
+      - run: npm run all
+
+  with-default-parameters:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with: { python-version: 3.9 }
+      - uses: ./
+      - run: poetry --version
+      - run: poetry run black --version
+
+  without-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with: { python-version: 3.9 }
+      - uses: ./
+        with: 
+          cache-dependencies: false
+          cache-installation: false
+      - run: poetry --version
+      - run: poetry run black --version
+
