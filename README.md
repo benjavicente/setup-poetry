@@ -20,7 +20,7 @@ jobs:
         # the specified version in pyproject.toml
         with: { python-version: 3.9 }
 
-      - uses: benjavicente/setup-poetry
+      - uses: benjavicente/setup-poetry@v0.1
         with: # default arguments
           poetry-version: 1.1.11
           cache-installation: true
