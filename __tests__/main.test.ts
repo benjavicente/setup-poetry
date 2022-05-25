@@ -1,5 +1,5 @@
 import { test, expect } from "@jest/globals"
-import { checkNecessaryFiles } from "../src/utils"
+import { checkNecessaryFiles } from "../src/install-dependencies"
 
 test("Check if files exists in this repository", () => {
   const { projectFile, lockFile } = checkNecessaryFiles()
