@@ -1,6 +1,85 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 9416:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.checkNecessaryFiles = exports.install_dependencies = void 0;
+const cache = __importStar(__nccwpck_require__(7799));
+const core = __importStar(__nccwpck_require__(2186));
+const glob = __importStar(__nccwpck_require__(8090));
+const path = __importStar(__nccwpck_require__(1017));
+const exec_1 = __nccwpck_require__(1514);
+const fs_1 = __nccwpck_require__(7147);
+const utils_1 = __nccwpck_require__(918);
+async function install_dependencies() {
+    const installDependencies = core.getBooleanInput("install-dependencies");
+    if (!installDependencies) {
+        return;
+    }
+    const POETRY_VERSION = core.getInput("poetry-version");
+    const VENV_PATH = ".venv";
+    const cacheDependencies = core.getBooleanInput("cache-dependencies");
+    const { lockFile, projectFile } = checkNecessaryFiles();
+    await core.group("Installing dependencies", async () => {
+        const depsHash = await glob.hashFiles(lockFile || projectFile);
+        const depsCacheKey = `setup-poetry-deps-${POETRY_VERSION}-${depsHash}`;
+        const depsCachePaths = [path.join(VENV_PATH, "*")];
+        let depsCachedRestoredKey;
+        if (cacheDependencies) {
+            depsCachedRestoredKey = await cache.restoreCache(depsCachePaths, depsCacheKey);
+        }
+        if (depsCachedRestoredKey) {
+            core.info("Using cached dependencies");
+        }
+        else {
+            core.info("Installing dependencies...");
+            await (0, exec_1.exec)("poetry", ["install", "-n", "-q"]);
+            if (cacheDependencies)
+                await (0, utils_1.saveCacheWithoutErrors)(depsCachePaths, depsCacheKey);
+        }
+    });
+}
+exports.install_dependencies = install_dependencies;
+function checkNecessaryFiles() {
+    const projectFile = "pyproject.toml";
+    let lockFile = "poetry.lock";
+    if (!(0, fs_1.existsSync)(projectFile)) {
+        throw new Error(`Poetry needs the ${projectFile} file in the repository`);
+    }
+    if (!(0, fs_1.existsSync)(lockFile)) {
+        lockFile = undefined;
+        core.warning(`You should use ${lockFile} to improve install speeds`);
+    }
+    return { projectFile, lockFile };
+}
+exports.checkNecessaryFiles = checkNecessaryFiles;
+
+
+/***/ }),
+
 /***/ 3109:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -26,67 +105,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
-const glob = __importStar(__nccwpck_require__(8090));
-const path = __importStar(__nccwpck_require__(1017));
-const tc = __importStar(__nccwpck_require__(7784));
-const utils_1 = __nccwpck_require__(918);
-const exec_1 = __nccwpck_require__(1514);
+const install_dependencies_1 = __nccwpck_require__(9416);
+const poetry_1 = __nccwpck_require__(9726);
 async function run() {
     try {
-        const POETRY_HOME = await (0, utils_1.getPoetryHome)();
-        const POETRY_PATH = path.join(POETRY_HOME, "bin");
-        const POETRY_VERSION = core.getInput("poetry-version");
-        const VENV_PATH = ".venv";
-        const installDependencies = core.getBooleanInput("install-dependencies");
-        const cacheInstallation = core.getBooleanInput("cache-installation");
-        const cacheDependencies = core.getBooleanInput("cache-dependencies");
-        const { lockFile, projectFile } = (0, utils_1.checkNecessaryFiles)();
-        await core.group("Installing poetry", async () => {
-            const poetryCacheKey = `setup-poetry-self-${POETRY_VERSION}`;
-            const poetryCachePaths = [path.join(POETRY_HOME, "*")];
-            let poetryCachedRestoredKey;
-            if (cacheInstallation) {
-                poetryCachedRestoredKey = await cache.restoreCache(poetryCachePaths, poetryCacheKey);
-            }
-            if (poetryCachedRestoredKey) {
-                core.info("Using cached poetry installation");
-            }
-            else {
-                core.info("Downloading Poetry...");
-                const installPoetryPath = await tc.downloadTool("https://install.python-poetry.org");
-                const execOptions = { env: { ...process.env, POETRY_HOME, POETRY_VERSION }, silent: true };
-                await (0, exec_1.exec)("python", [installPoetryPath, "-y"], execOptions);
-                if (cacheInstallation)
-                    await (0, utils_1.saveCacheWithoutErrors)(poetryCachePaths, poetryCacheKey);
-            }
-            core.addPath(POETRY_PATH);
-            const poetryWasInstalled = await (0, exec_1.exec)("poetry", ["--version"], { silent: true });
-            if (poetryWasInstalled !== 0)
-                throw new Error("Cound't install poetry");
-            await (0, exec_1.exec)("poetry", ["config", "virtualenvs.in-project", "true"], { silent: true });
-        });
-        if (installDependencies) {
-            await core.group("Installing dependencies", async () => {
-                const depsHash = await glob.hashFiles(lockFile || projectFile);
-                const depsCacheKey = `setup-poetry-deps-${POETRY_VERSION}-${depsHash}`;
-                const depsCachePaths = [path.join(VENV_PATH, "*")];
-                let depsCachedRestoredKey;
-                if (cacheDependencies) {
-                    depsCachedRestoredKey = await cache.restoreCache(depsCachePaths, depsCacheKey, undefined);
-                }
-                if (depsCachedRestoredKey) {
-                    core.info("Using cached dependencies");
-                }
-                else {
-                    core.info("Installing dependencies...");
-                    await (0, exec_1.exec)("poetry", ["install", "-n", "-q"]);
-                    if (cacheDependencies)
-                        await (0, utils_1.saveCacheWithoutErrors)(depsCachePaths, depsCacheKey);
-                }
-            });
-        }
+        await (0, poetry_1.install_poetry)();
+        await (0, install_dependencies_1.install_dependencies)();
     }
     catch (error) {
         if (error instanceof Error)
@@ -94,6 +119,90 @@ async function run() {
     }
 }
 run();
+
+
+/***/ }),
+
+/***/ 9726:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.install_poetry = void 0;
+const cache = __importStar(__nccwpck_require__(7799));
+const core = __importStar(__nccwpck_require__(2186));
+const io = __importStar(__nccwpck_require__(7436));
+const path = __importStar(__nccwpck_require__(1017));
+const tc = __importStar(__nccwpck_require__(7784));
+const exec_1 = __nccwpck_require__(1514);
+const process_1 = __nccwpck_require__(7282);
+const utils_1 = __nccwpck_require__(918);
+async function install_poetry() {
+    const cacheInstallation = core.getBooleanInput("cache-installation");
+    const POETRY_HOME = await getPoetryHome();
+    const POETRY_VERSION = core.getInput("poetry-version");
+    const POETRY_PATH = path.join(POETRY_HOME, "bin");
+    await core.group("Installing poetry", async () => {
+        const poetryCacheKey = `setup-poetry-self-${POETRY_VERSION}`;
+        const poetryCachePaths = [path.join(POETRY_HOME, "*")];
+        const poetryCachedRestoredKey = await restoreFromCache(cacheInstallation, poetryCachePaths, poetryCacheKey);
+        if (poetryCachedRestoredKey) {
+            core.info("Using cached poetry installation");
+        }
+        else {
+            core.info("Downloading Poetry...");
+            const installPoetryPath = await tc.downloadTool("https://install.python-poetry.org");
+            const execOptions = { env: { ...process.env, POETRY_HOME, POETRY_VERSION }, silent: true };
+            await (0, exec_1.exec)("python", [installPoetryPath, "-y"], execOptions);
+            if (cacheInstallation)
+                await (0, utils_1.saveCacheWithoutErrors)(poetryCachePaths, poetryCacheKey);
+        }
+        core.addPath(POETRY_PATH);
+        const poetryWasInstalled = await (0, exec_1.exec)("poetry", ["--version"], { silent: true });
+        if (poetryWasInstalled !== 0)
+            throw new Error("Cound't install poetry");
+        await (0, exec_1.exec)("poetry", ["config", "virtualenvs.in-project", "true"], { silent: true });
+    });
+}
+exports.install_poetry = install_poetry;
+async function restoreFromCache(cacheInstallation, poetryCachePaths, poetryCacheKey) {
+    if (!cacheInstallation) {
+        return undefined;
+    }
+    return cache.restoreCache(poetryCachePaths, poetryCacheKey);
+}
+async function getPoetryHome() {
+    const home = getUserDataDir();
+    await io.mkdirP(home);
+    return path.join(home, "pypoetry");
+}
+function getUserDataDir() {
+    if (process_1.platform === "win32" && process.env.APPDATA !== undefined)
+        return process.env.APPDATA;
+    if (process_1.platform === "darwin")
+        return `${process.env.HOME}/Library/Application Support`;
+    return `${process.env.HOME}/.local/share`;
+}
 
 
 /***/ }),
@@ -123,39 +232,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.saveCacheWithoutErrors = exports.checkNecessaryFiles = exports.getPoetryHome = void 0;
+exports.saveCacheWithoutErrors = void 0;
 const cache = __importStar(__nccwpck_require__(7799));
 const core = __importStar(__nccwpck_require__(2186));
-const io = __importStar(__nccwpck_require__(7436));
-const path = __importStar(__nccwpck_require__(1017));
-const fs_1 = __nccwpck_require__(7147);
-const process_1 = __nccwpck_require__(7282);
-function getUserDataDir() {
-    if (process_1.platform === "win32" && process.env.APPDATA !== undefined)
-        return process.env.APPDATA;
-    if (process_1.platform === "darwin")
-        return `${process.env.HOME}/Library/Application Support`;
-    return `${process.env.HOME}/.local/share`;
-}
-async function getPoetryHome() {
-    const home = getUserDataDir();
-    await io.mkdirP(home);
-    return path.join(home, "pypoetry");
-}
-exports.getPoetryHome = getPoetryHome;
-function checkNecessaryFiles() {
-    const projectFile = "pyproject.toml";
-    let lockFile = "poetry.lock";
-    if (!(0, fs_1.existsSync)(projectFile)) {
-        throw new Error(`Poetry needs the ${projectFile} file in the repository`);
-    }
-    if (!(0, fs_1.existsSync)(lockFile)) {
-        lockFile = undefined;
-        core.warning(`You should use ${lockFile} to improve install speeds`);
-    }
-    return { projectFile, lockFile };
-}
-exports.checkNecessaryFiles = checkNecessaryFiles;
 async function saveCacheWithoutErrors(paths, key) {
     try {
         await cache.saveCache(paths, key);
